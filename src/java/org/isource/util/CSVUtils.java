@@ -6,9 +6,12 @@
 package org.isource.util;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -19,15 +22,21 @@ public class CSVUtils {
     private static final char DEFAULT_SEPARATOR = ',';
     private static final char DEFAULT_QUOTE = '"';
 
-    public static void main(String csvFile) throws Exception {
-
-        Scanner scanner = new Scanner(new File(csvFile));
-        while (scanner.hasNext()) {
-            List<String> line = parseLine(scanner.nextLine());
-            System.out.println("Country [id= " + line.get(0) + ", code= " + line.get(1) + " , name=" + line.get(2) + "]");
+    public static String readCsv(String csvFile) {
+        String out = "";
+        try {
+            System.out.println(csvFile);
+            Scanner scanner = new Scanner(new File(csvFile));
+            while (scanner.hasNext()) {
+                List<String> line = parseLine(scanner.nextLine());
+                out += "Country [id= " + line.get(0) + ", code= " + line.get(1) + " , name=" + line.get(2) + "]\n";
+            }
+            scanner.close();
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(CSVUtils.class.getName()).log(Level.SEVERE, null, ex);
         }
-        scanner.close();
 
+        return out;
     }
 
     public static List<String> parseLine(String cvsLine) {

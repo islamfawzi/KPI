@@ -4,7 +4,7 @@
 <%@ page import="org.apache.commons.fileupload.disk.*" %>
 <%@ page import="org.apache.commons.fileupload.servlet.*" %>
 <%@ page import="org.apache.commons.io.output.*" %>
-
+<%@ page import="org.isource.util.CSVUtils" %>
 <%
    File file ;
    int maxFileSize = 5000 * 1024;
@@ -41,6 +41,7 @@
          out.println("<body>");
          while ( i.hasNext () ) 
          {
+             System.out.println("done");
             FileItem fi = (FileItem)i.next();
             if ( !fi.isFormField () )	
             {
@@ -58,8 +59,12 @@
             fileName.substring(fileName.lastIndexOf("\\")+1)) ;
             }
             fi.write( file ) ;
+            
             out.println("Uploaded Filename: " + filePath + 
             fileName + "<br>");
+            
+            CSVUtils.readCsv(filePath + fileName);
+            
             }
          }
          out.println("</body>");
