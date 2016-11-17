@@ -34,11 +34,9 @@
          // Process the uploaded file items
          Iterator i = fileItems.iterator();
 
-         out.println("<html>");
-         out.println("<head>");
-         out.println("<title>JSP File upload</title>");  
-         out.println("</head>");
-         out.println("<body>");
+         // csv file data 
+         List<List> csvData = new ArrayList<List>();
+         
          while ( i.hasNext () ) 
          {
              System.out.println("done");
@@ -60,15 +58,53 @@
             }
             fi.write( file ) ;
             
-            out.println("Uploaded Filename: " + filePath + 
-            fileName + "<br>");
+         //   out.println("Uploaded Filename: " + filePath + fileName + "<br>");
             
-            CSVUtils.readCsv(filePath + fileName);
-            
+            csvData = CSVUtils.readCsv(filePath + fileName);
+            session.setAttribute("filepath", filePath + fileName);
+            session.setAttribute("tableName", fileName.substring(0, fileName.indexOf('.')));
+            session.setAttribute("csvData", csvData);
             }
          }
-         out.println("</body>");
-         out.println("</html>");
+         %>
+         <style type="text/css">
+             table, table * {
+                 text-align: center;
+             }
+             table input {
+                 font-weight: bold;
+                 font-size: 20px !important;
+             }
+             table td{
+                 padding: 10px;
+             }
+         </style>
+         <%@include  file="header.jsp" %>
+         <center>
+         <form method="post" action="save.jsp" >
+             <table border="1" cellpadding="10">
+             <% for(int c = 0; c < csvData.size(); c++){ 
+                List line = csvData.get(c);
+             %>
+             <tr>
+                 <% for(int s = 0; s < line.size(); s++){ %>
+                 <td>
+                     <% if (c == 0){ %>
+                     <input class="form-control" type="text" value="<%= line.get(s) %>" name="col_<%= s %>" /> 
+                     <% }else {%>
+                     <%= line.get(s) %> </td>
+                 <% }
+                  } %>
+             </tr>
+             <% } %>
+         </table>
+         <br>
+         <input type="submit" class="btn btn-primary" name="save" value="Save" />
+         </form>
+         </center>
+             <%@include file="footer.jsp" %>
+         <%
+         
       }catch(Exception ex) {
          System.out.println(ex);
       }

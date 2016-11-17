@@ -22,21 +22,23 @@ public class CSVUtils {
     private static final char DEFAULT_SEPARATOR = ',';
     private static final char DEFAULT_QUOTE = '"';
 
-    public static String readCsv(String csvFile) {
-        String out = "";
+    public static List<List> readCsv(String csvFile) {
+        List<List> lines = new ArrayList<List>();
         try {
             System.out.println(csvFile);
             Scanner scanner = new Scanner(new File(csvFile));
+            
             while (scanner.hasNext()) {
                 List<String> line = parseLine(scanner.nextLine());
-                out += "Country [id= " + line.get(0) + ", code= " + line.get(1) + " , name=" + line.get(2) + "]\n";
+                //out += "Country [id= " + line.get(0) + ", code= " + line.get(1) + " , name=" + line.get(2) + "]\n";
+                lines.add(line);
             }
             scanner.close();
         } catch (FileNotFoundException ex) {
             Logger.getLogger(CSVUtils.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        return out;
+        return lines;
     }
 
     public static List<String> parseLine(String cvsLine) {
