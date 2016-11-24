@@ -99,7 +99,7 @@
                     <td>
                         <select name="col_<%=c%>" class="form-control" >
                             <% for (int index = 0; index < Mapping.getMap().size(); index++) { %>
-                            <option <%if (index == c) {%> selected="selected" <%}%> value="<%=Mapping.getMap().get(index)%>"><%= Mapping.getMap().get(index)%></option>
+                            <option <%if (columns.get(c).equals(Mapping.getMap().get(index))) {%> selected="selected" <%}%> value="<%=Mapping.getMap().get(index)%>"><%= Mapping.getMap().get(index)%></option>
                             <% } %>
 
                         </select>
@@ -109,7 +109,7 @@
             </tbody>
         </table>
         <br>
-        <input type="submit" class="btn btn-primary" name="save" value="Save" />
+        <input type="submit" class="btn btn-primary" name="save" value="Save" style="width:168px" />
     </form>
 </center>
 <script type="text/javascript">
