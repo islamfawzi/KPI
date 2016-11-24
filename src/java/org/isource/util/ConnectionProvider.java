@@ -5,6 +5,7 @@
  */
 package org.isource.util;
 
+import antlr.StringUtils;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -13,10 +14,13 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.isource.beans.*;
 import org.json.simple.JSONObject;
+import sun.misc.Signal;
+import sun.misc.SignalHandler;
 
 /**
  *
@@ -39,7 +43,7 @@ public class ConnectionProvider {
 
         try {
             Class.forName("org.postgresql.Driver");
-            connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/kpi", "postgres", "root");
+            connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/kpi", "postgres", "postgres");
         } catch (ClassNotFoundException ex) {
             Logger.getLogger(ConnectionProvider.class.getName()).log(Level.SEVERE, null, ex);
         } catch (SQLException ex) {
@@ -49,6 +53,9 @@ public class ConnectionProvider {
     }
 
     public void createTable(String tableName, List<String> cols) {
+
+        tableName = tableName.trim().toLowerCase().replace(' ', '_');
+
         try {
             //Drop table if exist
             pstmt = connection.prepareStatement("DROP TABLE IF EXISTS " + tableName);
@@ -57,7 +64,7 @@ public class ConnectionProvider {
             // create table
             String stmt = "CREATE TABLE IF NOT EXISTS public." + tableName + " ( id numeric NOT NULL, ";
             for (int i = 0; i < cols.size(); i++) {
-                stmt += cols.get(i) + " character varying(255), ";
+                stmt += cols.get(i).trim().toLowerCase().replaceAll("\\W", "") + " character varying(255), ";
             }
 
 //          stmt += stmt.substring(0, stmt.length() - 2) + " )";
@@ -70,6 +77,8 @@ public class ConnectionProvider {
     }
 
     public void insertData(String tableName, List<List> csvData) {
+
+        tableName = tableName.trim().toLowerCase().replace(' ', '_');
 
         try {
             int id = 1;
@@ -95,6 +104,9 @@ public class ConnectionProvider {
     }
 
     public void addFile(String filepath, String tablename) {
+
+        String title = tablename.substring(0, 1).toUpperCase() + tablename.substring(1);;
+        tablename = tablename.trim().toLowerCase().replace(' ', '_');
         try {
 
             int table_id = tableExist(tablename);
@@ -104,12 +116,12 @@ public class ConnectionProvider {
                 pstmt.setInt(1, table_id);
             } else {
                 //pstmt = connection.prepareStatement("INSERT INTO public.files (id, filepath, tablename, created, updated) VALUES (1, ?, ?, now(), now())");
-                pstmt = connection.prepareStatement("INSERT INTO public.files"
-                        + "  SELECT MAX(id) + 1, ?, ?, now(), now()"
-                        + "  FROM public.files;");
+                pstmt = connection.prepareStatement("INSERT INTO public.files (filepath, tablename, title)"
+                        + " VALUES (?, ?, ?)");
 
                 pstmt.setString(1, filepath);
                 pstmt.setString(2, tablename);
+                pstmt.setString(3, title);
             }
             pstmt.executeUpdate();
 
@@ -142,12 +154,13 @@ public class ConnectionProvider {
     public List<Files> getFiles() {
         List<Files> files = new ArrayList<Files>();
         try {
-            pstmt = connection.prepareStatement("SELECT id, tablename FROM public.files WHERE active = TRUE ORDER BY created ASC");
+            pstmt = connection.prepareStatement("SELECT id, tablename,title FROM public.files WHERE active = TRUE ORDER BY created ASC");
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
                 Files f = new Files();
                 f.setId(rs.getInt(1));
                 f.setTablename(rs.getString(2));
+                f.setTitle(rs.getString(3));
                 files.add(f);
             }
         } catch (Exception ex) {
@@ -161,7 +174,10 @@ public class ConnectionProvider {
         try {
             ResultSet rs = connection.getMetaData().getColumns(null, null, tableName, null);
             while (rs.next()) {
-                cols.add(rs.getString("COLUMN_NAME"));
+                String col = rs.getString("COLUMN_NAME");
+                if(!col.equals("id")){
+                    cols.add(col);
+                }
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -171,8 +187,7 @@ public class ConnectionProvider {
 
     public int addFormula(Formula formula) {
         try {
-            pstmt = connection.prepareStatement("INSERT INTO public.formula (id, formula, title) "
-                    + " SELECT MAX(id) + 1, ?, ? FROM public.formula");
+            pstmt = connection.prepareStatement("INSERT INTO public.formula (formula, title) VALUES(?, ?)");
             pstmt.setString(1, formula.getFormula());
             pstmt.setString(2, formula.getTitle());
             return pstmt.executeUpdate();
@@ -247,8 +262,8 @@ public class ConnectionProvider {
     public int addKpi(Kpi kpi) {
 
         try {
-            pstmt = connection.prepareStatement("INSERT INTO public.kpi (id, table_id, formula_id, title, x_axis) "
-                    + " SELECT MAX(id) + 1, ?, ?, ?, ? FROM public.kpi");
+            pstmt = connection.prepareStatement("INSERT INTO public.kpi (table_id, formula_id, title, x_axis) "
+                    + " VALUES(?, ?, ?, ?)");
             pstmt.setInt(1, kpi.getTable_id());
             pstmt.setInt(2, kpi.getFormula_id());
             pstmt.setString(3, kpi.getTitle());
@@ -281,7 +296,7 @@ public class ConnectionProvider {
     public List<KPI_Formula_Table> getKpis() {
         List<KPI_Formula_Table> kpis = new ArrayList<KPI_Formula_Table>();
         try {
-            pstmt = connection.prepareStatement("SELECT kpi.id,kpi.title, kpi.x_axis, formula.formula, files.tablename FROM kpi"
+            pstmt = connection.prepareStatement("SELECT kpi.id,kpi.title, kpi.x_axis, formula.formula, files.tablename,formula.title FROM kpi"
                     + " JOIN formula ON kpi.formula_id = formula.id"
                     + " JOIN files ON kpi.table_id = files.id "
                     + " WHERE kpi.active = TRUE "
@@ -294,6 +309,7 @@ public class ConnectionProvider {
                 k.setX_axis(rs.getString(3));
                 k.setFormula(rs.getString(4));
                 k.setTableName(rs.getString(5));
+                k.setFormulaTitle(rs.getString(6));
                 kpis.add(k);
             }
         } catch (Exception ex) {
@@ -337,10 +353,13 @@ public class ConnectionProvider {
         return 0;
     }
 
+    @Deprecated
     public String calc(String x_axis, String formula, String tablename) {
 
+        formula = handle_cols(formula);             // toLowerCase & replace spaces with _
         formula = formula.replace("{", " cast( ");
         formula = formula.replace("}", " as numeric) ");
+
         JSONObject obj = new JSONObject();
 
         try {
@@ -362,6 +381,98 @@ public class ConnectionProvider {
 
         System.out.println(obj.toJSONString());
         return obj.toJSONString();
+    }
+
+    public String calc2(String x_axis, String formula, String tablename) {
+
+        List<String> x_axis_data = new ArrayList<String>();
+        List<List> lines = new ArrayList<List>();
+
+        try {
+            List<String> table_cols = getTableCols(tablename);
+            
+            Map<Integer, String> sortedCols = Mapping.sortCols(table_cols);
+
+            formula = handle_cols(formula);
+            int table_col_index = 0;
+            for (int c : sortedCols.keySet()) {
+                String col = sortedCols.get(c);
+                if (formula.contains(col)) {
+                    int index = table_cols.indexOf(col);
+                    String ch = Mapping.getChar(table_col_index);
+                    formula = formula.replace(col, ch);
+                }
+                table_col_index++;
+
+            }
+            System.out.println(formula);
+
+            pstmt = connection.prepareStatement("select *, " + x_axis + " as x_axis from " + tablename);
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+
+                // get x_axis data
+                x_axis_data.add(rs.getString(x_axis));
+
+                List<String> line = new ArrayList<String>();
+                for (String col : table_cols) {
+                    line.add(rs.getString(col));
+                }
+                lines.add(line);
+            }
+
+            // get formula result
+            CSVUtils utils = new CSVUtils();
+            List<String> kpiout = utils.createSheet(table_cols, lines, formula);
+
+            // get Json String
+            return getJsonData(x_axis_data, kpiout, x_axis);
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public String getJsonData(List<String> x_axis_data, List<String> kpiData, String x_axis) {
+
+        JSONObject obj = new JSONObject();
+
+        for (int i = 0; i < x_axis_data.size(); i++) {
+            String key = x_axis_data.get(i);
+            if (obj.containsKey(key)) {
+                double value = (Double) obj.get(key) + Double.parseDouble(kpiData.get(i + 1));
+                obj.put(key, value);
+            } else {
+                obj.put(key, Double.parseDouble(kpiData.get(i + 1)));
+            }
+        }
+        return obj.toJSONString();
+    }
+
+    private String handle_cols(String formula) {
+
+        int i = 0;
+        while (i < formula.length()) {
+            int index1 = formula.indexOf("{", i);
+            int index2 = formula.indexOf("}", i);
+            if (index1 == -1 || index2 == -1) {
+                break;
+            }
+            String col = formula.substring(index1 + 1, index2);
+            i = index2 + 1;
+            String col2 = col.trim().toLowerCase().replaceAll("\\W", "");
+            formula = formula.replaceFirst(col, col2);
+        }
+
+        return formula.replaceAll("[{}]", "");
+    }
+
+    public static void main(String[] args) {
+        String x = new ConnectionProvider().calc2("day", "SUM({Shift}#,{Total Quantity Produced}#)", "performance");
+        System.out.println(x);
     }
 
 }

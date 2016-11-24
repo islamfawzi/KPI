@@ -11,8 +11,9 @@
 
         <title>KPIs</title>
 
-
-
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+        
         <!-- Custom CSS -->
         <link href="simple-sidebar.css" rel="stylesheet">
 
@@ -28,6 +29,10 @@
             <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
         <![endif]-->
 
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.min.css" rel="stylesheet" />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/js/select2.min.js"></script>
+
+        
     </head>
 
     <jsp:useBean id="db" class="org.isource.util.ConnectionProvider" scope="application" ></jsp:useBean>
@@ -45,15 +50,24 @@
                     <li>
                         <a href="${pageContext.request.contextPath}/import.jsp">Import Csv</a>
                     </li>
+                    <%--
                     <li>
                         <a href="${pageContext.request.contextPath}/formula.jsp">Add Formula</a>
-                    </li>
+                    </li> 
+                    --%>
                     <li>
                         <a href="${pageContext.request.contextPath}/formulas.jsp">All Formulas</a>
                     </li>
+                    <%--
                     <li>
                         <a href="${pageContext.request.contextPath}/add-kpi.jsp">Add KPI</a>
                     </li>
+                    --%>
+                    <%-- 
+                    <li>
+                        <a href="${pageContext.request.contextPath}/map.jsp">Add Mapping</a>
+                    </li> 
+                    --%>
                 </ul>
             </div>
             <!-- /#sidebar-wrapper -->

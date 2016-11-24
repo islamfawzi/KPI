@@ -3,10 +3,10 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/media/islam/work/java%20workspace/KPI/web/header.jsp</file>
-            <file>file:/media/islam/work/java%20workspace/KPI/src/java/org/isource/beans/Formula.java</file>
-            <file>file:/media/islam/work/java%20workspace/KPI/web/kpis.jsp</file>
-            <file>file:/media/islam/work/java%20workspace/KPI/web/add-kpi.jsp</file>
+            <file>file:/media/islam/A2163849163820A91/java/KPI/src/java/org/isource/util/CSVUtils.java</file>
+            <file>file:/media/islam/A2163849163820A91/java/KPI/web/kpi.jsp</file>
+            <file>file:/media/islam/A2163849163820A91/java/KPI/web/ajax.jsp</file>
+            <file>file:/media/islam/A2163849163820A91/java/KPI/src/java/org/isource/util/ConnectionProvider.java</file>
         </group>
     </open-files>
 </project-private>

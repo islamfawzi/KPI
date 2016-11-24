@@ -10,6 +10,22 @@
 <%@page import="org.isource.beans.KPI_Formula_Table"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@include file="header.jsp" %>
+
+<style>
+    .imgs-div{
+        text-align: center; 
+        margin-bottom: 40px;
+    }
+    .charts-imgs{
+        width: 100px;
+        padding: 10px;
+    }
+    .border{
+        border: 3px solid #000;
+    }
+    
+</style>
+
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
 
 <%
@@ -17,15 +33,21 @@
     String kpi_json = "";
     
     KPI_Formula_Table kpi = db.getKpi(kId);
-    kpi_json = db.calc(kpi.getX_axis(), kpi.getFormula(), kpi.getTableName());
-   
+    kpi_json = db.calc2(kpi.getX_axis(), kpi.getFormula(), kpi.getTableName());
+    
 %>
+
+<div class="imgs-div">
+    <img id="chart-img1" src="images/1.png" class="charts-imgs" />
+    <img id="chart-img2" src="images/2.jpg" class="charts-imgs border" />
+    <img id="chart-img3" src="images/3.gif" class="charts-imgs" />
+</div>
 <input type="hidden" id="kpi_inp" value='<%= kpi_json%>' />
 
 
-<div id="chart"></div>
-<div id="chart2"></div>
-<div id="chart3"></div>
+<div style="display: none" class="chart" id="chart1"></div>
+<div class="chart" id="chart2"></div>
+<div style="display: none" class="chart" id="chart3"></div>
 <!--<div id="chart4"></div>-->
 
 <script type="text/javascript">
@@ -45,7 +67,7 @@
             flow: true,
             pubnub: pubnub,
             generate: {
-                bindto: '#chart',
+                bindto: '#chart1',
                 data: {
                     labels: false
                 }
@@ -179,6 +201,25 @@
         var kpi = $("#kpi_inp").val();
         return JSON.parse(kpi);
     }
+    
+    $("#chart-img1").click(function(){
+        $(".chart").hide();
+        $("#chart1").show();
+        $(".charts-imgs").removeClass("border");
+        $(this).addClass("border");
+    });
+    $("#chart-img2").click(function(){
+        $(".chart").hide();
+        $("#chart2").show();
+        $(".charts-imgs").removeClass("border");
+        $(this).addClass("border");
+    });
+    $("#chart-img3").click(function(){
+        $(".chart").hide();
+        $("#chart3").show();
+        $(".charts-imgs").removeClass("border");
+        $(this).addClass("border");
+    });
 </script>
 
 <%@include file="footer.jsp" %>

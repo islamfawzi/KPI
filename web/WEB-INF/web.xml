@@ -13,7 +13,7 @@
     <description>Location to store uploaded file</description> 
     <param-name>file-upload</param-name> 
     <param-value>
-         /opt/tomcat7/webapps/data/
+         /media/islam/55247aa2-2234-4e48-8a62-c1fabcb5c84d/opt/apache-tomcat-7.0.70/webapps/data/
     </param-value> 
   </context-param>
 </web-app>

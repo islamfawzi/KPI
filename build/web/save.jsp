@@ -12,6 +12,7 @@
        cols.add(request.getParameter("col_"+i));
    }
    
+   //tableName = tableName.trim().toLowerCase().replace(' ', '_');
    db.createTable(tableName, cols);
    db.insertData(tableName, csvData);
    db.addFile(filepath, tableName);

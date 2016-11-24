@@ -48,7 +48,7 @@
                 <a  href="kpi.jsp?k=<%=k.getKpiId()%>" target="_blank"><%= k.getKpiTitle()%></a>
             </td>
             <td> <%= k.getTableName() %> </td>
-            <td> <%= k.getFormula()%> </td>
+            <td> <%= k.getFormulaTitle()%> </td>
             <td class="kpi-cb">
                 <a class="btn btn-primary" href="edit-kpi.jsp?k=<%=k.getKpiId()%>" />Edit</a>
             </td>

@@ -15,6 +15,7 @@ public class KPI_Formula_Table {
     private String kpiTitle;
     private String x_axis;
     private String formula;
+    private String formulaTitle;
     private String tableName;
     private int table_id;
     private int formula_id;
@@ -39,6 +40,10 @@ public class KPI_Formula_Table {
         return formula;
     }
 
+    public String getFormulaTitle() {
+        return formulaTitle;
+    }
+    
     public String getTableName() {
         return tableName;
     }
@@ -57,6 +62,10 @@ public class KPI_Formula_Table {
 
     public void setFormula(String formula) {
         this.formula = formula;
+    }
+
+    public void setFormulaTitle(String formulaTitle) {
+        this.formulaTitle = formulaTitle;
     }
 
     public void setTableName(String tableName) {
