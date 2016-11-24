@@ -122,7 +122,6 @@
 <%@include file="footer.jsp" %>
 
 <%
-
         } catch (Exception ex) {
             System.out.println(ex);
         }
