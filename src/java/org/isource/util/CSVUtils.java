@@ -13,6 +13,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.EmptyStackException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -21,14 +22,20 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.catalina.tribes.util.Arrays;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.poi.hssf.usermodel.HSSFEvaluationWorkbook;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.formula.FormulaParseException;
+import org.apache.poi.ss.formula.FormulaParser;
+import org.apache.poi.ss.formula.FormulaType;
+import org.apache.poi.ss.formula.ptg.Ptg;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFEvaluationWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.hibernate.metamodel.source.annotations.attribute.MappedAttribute;
 import org.isource.beans.Mapping;
@@ -134,7 +141,7 @@ public class CSVUtils {
 
     }
 
-    public List<String> createSheet(List<String> titles, List<List> lines, String formula) {
+    public List<String> createSheet(List<String> titles, List<List> lines, String formula) throws FormulaParseException {
 
         Map<Integer, String> sortedCols = Mapping.sortCols(titles);
 
@@ -144,8 +151,6 @@ public class CSVUtils {
 
         Row header = sheet.createRow(0);
 
-        System.out.println(sortedCols.toString());
-        
         int title_cell = 0;
         for (int col : sortedCols.keySet()) {
             header.createCell(title_cell).setCellValue(sortedCols.get(col));
@@ -158,18 +163,9 @@ public class CSVUtils {
             Row dataRow = sheet.createRow(row);
             List<String> line = lines.get(row - 1);
 
-            /*for (int cell = 0; cell < line.size(); cell++) {
-                Cell c = dataRow.createCell(cell);
-                if (isNumeric(line.get(cell))) {
-                    c.setCellValue(Double.parseDouble(line.get(cell)));
-                } else {
-                    c.setCellValue(line.get(cell));
-                }
-
-            }*/
             int cell = 0;
             for (int col : sortedCols.keySet()) {
-                System.out.println(col + "  " + line.get(col));
+//              System.out.println(col + "  " + line.get(col));
                 Cell c = dataRow.createCell(cell);
                 if (isNumeric(line.get(col))) {
                     c.setCellValue(Double.parseDouble(line.get(col)));
@@ -179,14 +175,18 @@ public class CSVUtils {
                 cell++;
             }
 
+            // create formula result cell
             Cell formula_cell = dataRow.createCell(line.size());
             formula_cell.setCellType(Cell.CELL_TYPE_FORMULA);
+
+            System.out.println(formula);
+
+            // replace # with row ranges
             if (formula.contains("#")) {
                 formula_cell.setCellFormula(formula.replace("#", (row + 1) + ""));
             } else {
                 formula_cell.setCellFormula(formula);
             }
-
         }
 
         List<List> KpiLines = readWorkbook(workbook);
@@ -199,15 +199,19 @@ public class CSVUtils {
 
         }
 
+        // apply formula 
         workbook = evaluateFormulas(workbook);
+
+        // write into sample.xls
         try {
             FileOutputStream out = new FileOutputStream(new File("/media/islam/55247aa2-2234-4e48-8a62-c1fabcb5c84d/opt/apache-tomcat-7.0.70/webapps/data/sample.xls"));
             workbook.write(out);
             out.close();
-        } catch (Exception ex) {} 
-        
+        } catch (Exception ex) {
+        }
+
         return formula_output;
-         
+
     }
 
     private static List<List> readWorkbook(HSSFWorkbook workbook) {
@@ -332,7 +336,8 @@ public class CSVUtils {
                     inQuotes = false;
                     doubleQuotesInColumn = false;
                 } else //Fixed : allow "" in custom quote enclosed
-                 if (ch == '\"') {
+                {
+                    if (ch == '\"') {
                         if (!doubleQuotesInColumn) {
                             curVal.append(ch);
                             doubleQuotesInColumn = true;
@@ -340,6 +345,7 @@ public class CSVUtils {
                     } else {
                         curVal.append(ch);
                     }
+                }
             } else if (ch == customQuote) {
 
                 inQuotes = true;
@@ -389,5 +395,41 @@ public class CSVUtils {
     public static boolean isNumeric(String str) {
         return str.matches("-?\\d+(\\.\\d+)?");  //match a number with optional '-' and decimal.
     }
+
+    public static String validate_formula(String formula) {
+         
+        List<String> allCols = Mapping.minify(Mapping.getMap());
+        
+        formula  = new ConnectionProvider().translate_formula(formula, allCols).replace("#", "1");
+        System.out.println(formula);
+        
+        String v_msg = "valid";
+        try {
+            FileInputStream file = new FileInputStream(new File("/media/islam/55247aa2-2234-4e48-8a62-c1fabcb5c84d/opt/apache-tomcat-7.0.70/webapps/data/validation.xls"));
+
+            HSSFWorkbook workbook = new HSSFWorkbook(file);
+            HSSFSheet sheet = workbook.getSheetAt(0);
+            Row row = sheet.getRow(0);
+            Cell cell = row.createCell(row.getPhysicalNumberOfCells());
+            cell.setCellType(Cell.CELL_TYPE_FORMULA);
+            
+            cell.setCellFormula(formula);
+            
+            workbook = evaluateFormulas(workbook);
+            
+            file.close();
+
+            /*
+            FileOutputStream outFile = new FileOutputStream(new File("/media/islam/55247aa2-2234-4e48-8a62-c1fabcb5c84d/opt/apache-tomcat-7.0.70/webapps/data/validation.xls"));
+            workbook.write(outFile);
+            outFile.close();
+            */
+
+        } catch (Exception e) {
+            v_msg = e.getMessage();
+        }
+        return v_msg;
+    }
+    
 
 }

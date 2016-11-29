@@ -15,6 +15,8 @@ public class Files implements java.io.Serializable {
     private String title;
     private Date created;
     private Date updated;
+    private int formula_id;
+    private String formula_title;
 
     public Files() {
     }
@@ -79,6 +81,22 @@ public class Files implements java.io.Serializable {
 
     public void setUpdated(Date updated) {
         this.updated = updated;
+    }
+
+    public int getFormula_id() {
+        return formula_id;
+    }
+
+    public String getFormula_title() {
+        return formula_title;
+    }
+
+    public void setFormula_id(int formula_id) {
+        this.formula_id = formula_id;
+    }
+
+    public void setFormula_title(String formula_title) {
+        this.formula_title = formula_title;
     }
 
 }

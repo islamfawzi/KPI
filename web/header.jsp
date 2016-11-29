@@ -48,7 +48,7 @@
                             <a href="${pageContext.request.contextPath}">KPIs</a>
                     </li>
                     <li>
-                        <a href="${pageContext.request.contextPath}/import.jsp">Import Csv</a>
+                        <a href="${pageContext.request.contextPath}/import.jsp">Import Sheet</a>
                     </li>
                     <%--
                     <li>
@@ -56,7 +56,10 @@
                     </li> 
                     --%>
                     <li>
-                        <a href="${pageContext.request.contextPath}/formulas.jsp">All Formulas</a>
+                        <a href="${pageContext.request.contextPath}/formulas.jsp">Formulas</a>
+                    </li>
+                    <li>
+                        <a href="${pageContext.request.contextPath}/tables.jsp">Tables</a>
                     </li>
                     <%--
                     <li>

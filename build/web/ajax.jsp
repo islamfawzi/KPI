@@ -3,6 +3,7 @@
     Created on : Nov 14, 2016, 3:58:28 PM
     Author     : islam
 --%>
+<%@page import="org.isource.util.CSVUtils"%>
 <%@page import="org.isource.beans.Mapping"%>
 <%@page import="org.json.simple.JSONObject"%>
 <%@page import="org.json.simple.parser.JSONParser"%>
@@ -26,10 +27,18 @@
         }*/
         out.print(obj.toJSONString());
     }
+    
     else if(request.getParameter("tableid") != null){
         int table_id = Integer.parseInt(request.getParameter("tableid"));
         KPI_Formula_Table kpi = db.getKpi(table_id); 
         String kpi_json = db.calc2(kpi.getX_axis(), kpi.getFormula(), kpi.getTableName());
         out.print(kpi_json);
+    }
+    
+    else if(request.getParameter("formula") != null){
+        
+        String valid = CSVUtils.validate_formula(request.getParameter("formula"));
+        out.print(valid);
+        
     }
 %>

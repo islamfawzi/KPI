@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.poi.ss.formula.FormulaParseException;
+import org.apache.poi.ss.formula.FormulaParser;
 import org.isource.beans.*;
 import org.json.simple.JSONObject;
 import sun.misc.Signal;
@@ -129,6 +131,7 @@ public class ConnectionProvider {
             ex.printStackTrace();
         }
     }
+    
 
     public int tableExist(String tablename) {
 
@@ -154,19 +157,26 @@ public class ConnectionProvider {
     public List<Files> getFiles() {
         List<Files> files = new ArrayList<Files>();
         try {
-            pstmt = connection.prepareStatement("SELECT id, tablename,title FROM public.files WHERE active = TRUE ORDER BY created ASC");
+            pstmt = connection.prepareStatement("SELECT files.id, files.tablename, files.title, formula.title as formula_title FROM public.files "
+                    + " FULL JOIN public.formula ON files.formula_id = formula.id"
+                    + " WHERE files.active = TRUE ORDER BY created ASC");
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
                 Files f = new Files();
                 f.setId(rs.getInt(1));
                 f.setTablename(rs.getString(2));
                 f.setTitle(rs.getString(3));
+                f.setFormula_title(rs.getString(4));
                 files.add(f);
             }
         } catch (Exception ex) {
             ex.printStackTrace();
         }
         return files;
+    }
+    
+    public void delFile(int file_id){
+    
     }
 
     public List<String> getTableCols(String tableName) {
@@ -175,7 +185,7 @@ public class ConnectionProvider {
             ResultSet rs = connection.getMetaData().getColumns(null, null, tableName, null);
             while (rs.next()) {
                 String col = rs.getString("COLUMN_NAME");
-                if(!col.equals("id")){
+                if (!col.equals("id")) {
                     cols.add(col);
                 }
             }
@@ -383,30 +393,17 @@ public class ConnectionProvider {
         return obj.toJSONString();
     }
 
-    public String calc2(String x_axis, String formula, String tablename) {
+    public String calc2(String x_axis, String formula, String tablename) throws FormulaParseException {
 
         List<String> x_axis_data = new ArrayList<String>();
         List<List> lines = new ArrayList<List>();
 
         try {
             List<String> table_cols = getTableCols(tablename);
-            
-            Map<Integer, String> sortedCols = Mapping.sortCols(table_cols);
 
-            formula = handle_cols(formula);
-            int table_col_index = 0;
-            for (int c : sortedCols.keySet()) {
-                String col = sortedCols.get(c);
-                if (formula.contains(col)) {
-                    int index = table_cols.indexOf(col);
-                    String ch = Mapping.getChar(table_col_index);
-                    formula = formula.replace(col, ch);
-                }
-                table_col_index++;
+            formula = translate_formula(formula, table_cols);
 
-            }
-            System.out.println(formula);
-
+//          System.out.println(formula);
             pstmt = connection.prepareStatement("select *, " + x_axis + " as x_axis from " + tablename);
             ResultSet rs = pstmt.executeQuery();
 
@@ -470,9 +467,40 @@ public class ConnectionProvider {
         return formula.replaceAll("[{}]", "");
     }
 
+    /**
+     * convert columns names to A..Z
+     * @param String formula
+     * @param List table_cols
+     * @return 
+     */
+    public String translate_formula(String formula, List<String> table_cols) {
+        
+        Map<Integer, String> sortedCols = Mapping.sortCols(table_cols);
+
+        formula = handle_cols(formula);
+        
+        int table_col_index = 0;
+        for (int c : sortedCols.keySet()) {
+            String col = sortedCols.get(c);
+            if (formula.contains(col)) {
+                int index = table_cols.indexOf(col);
+                String ch = Mapping.getChar(table_col_index);
+                System.out.println(ch);
+                formula = formula.replace(col, ch);
+            }
+            table_col_index++;
+
+        }
+
+        return formula;
+    }
+
     public static void main(String[] args) {
-        String x = new ConnectionProvider().calc2("day", "SUM({Shift}#,{Total Quantity Produced}#)", "performance");
-        System.out.println(x);
+
+        // String x = new ConnectionProvider().calc2("day", "SUM({Rest Break}#,{No. of Defects}#)", "quality");
+        
+         String x = new CSVUtils().validate_formula("SUM({Rest Break}#,{No. of Defects}#");
+         System.out.println(x);
     }
 
 }

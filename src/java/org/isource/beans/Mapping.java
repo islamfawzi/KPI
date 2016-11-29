@@ -70,6 +70,15 @@ public class Mapping {
     return sortedCols;
     }
     
+    public static List<String> minify(List<String> list){
+    
+        List<String> minified = new ArrayList<String>();
+        for(String w : list){
+          minified.add(w.trim().toLowerCase().replaceAll("\\W", ""));
+        }
+        return minified;
+    }
+    
     public static String getChar(int index){
         return chars.get(index);
     }

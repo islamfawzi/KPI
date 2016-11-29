@@ -4,7 +4,7 @@
 <FORM  ENCTYPE="multipart/form-data" ACTION="upload.jsp" METHOD=POST>
 		<br><br><br>
 	  <center><table border="2" >
-                    <tr><center><td colspan="2"><p align="center"><B>Import Your Csv File</B><center></td></tr>
+                    <tr><center><td colspan="2"><p align="center"><B>Import Your File</B><center></td></tr>
                     <tr><td><b>Choose the file To Upload:</b>
 </td>
                     <td><input type="file"  name="file" size="50" /></tr>
