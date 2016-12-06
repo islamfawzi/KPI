@@ -38,7 +38,10 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFEvaluationWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.hibernate.metamodel.source.annotations.attribute.MappedAttribute;
+import org.isource.beans.Formula;
 import org.isource.beans.Mapping;
+import org.isource.providers.Provider;
+import static org.isource.util.ConnectionProvider.strip_special_chars;
 
 /**
  *
@@ -131,7 +134,7 @@ public class CSVUtils {
             workbook.write(out);
             out.close();
             file.close();
-            System.out.println("update: " + filename);
+            
 
         } catch (FileNotFoundException ex) {
             Logger.getLogger(CSVUtils.class.getName()).log(Level.SEVERE, null, ex);
@@ -141,8 +144,10 @@ public class CSVUtils {
 
     }
 
-    public List<String> createSheet(List<String> titles, List<List> lines, String formula) throws FormulaParseException {
+    public List<String> createSheet(List<String> titles, List<List> lines, Formula formula_obj, String filename) throws FormulaParseException {
 
+        String formula = translate_formula(formula_obj.getFormula(), titles);
+        
         Map<Integer, String> sortedCols = Mapping.sortCols(titles);
 
         HSSFWorkbook workbook = new HSSFWorkbook();
@@ -153,16 +158,18 @@ public class CSVUtils {
 
         int title_cell = 0;
         for (int col : sortedCols.keySet()) {
-            header.createCell(title_cell).setCellValue(sortedCols.get(col));
+            String colFullName = Mapping.getFullLabel(sortedCols.get(col));
+            header.createCell(title_cell).setCellValue(colFullName);
             title_cell++;
         }
-        header.createCell(sortedCols.size()).setCellValue(formula);
-
+        header.createCell(sortedCols.size()).setCellValue(formula_obj.getTitle());
+        
+        
         for (int row = 1; row <= lines.size(); row++) {
 
             Row dataRow = sheet.createRow(row);
             List<String> line = lines.get(row - 1);
-
+        
             int cell = 0;
             for (int col : sortedCols.keySet()) {
 //              System.out.println(col + "  " + line.get(col));
@@ -179,11 +186,11 @@ public class CSVUtils {
             Cell formula_cell = dataRow.createCell(line.size());
             formula_cell.setCellType(Cell.CELL_TYPE_FORMULA);
 
-            System.out.println(formula);
-
+            
             // replace # with row ranges
             if (formula.contains("#")) {
                 formula_cell.setCellFormula(formula.replace("#", (row + 1) + ""));
+                System.out.println(formula.replace("#", (row + 1) + ""));
             } else {
                 formula_cell.setCellFormula(formula);
             }
@@ -204,7 +211,7 @@ public class CSVUtils {
 
         // write into sample.xls
         try {
-            FileOutputStream out = new FileOutputStream(new File("/media/islam/55247aa2-2234-4e48-8a62-c1fabcb5c84d/opt/apache-tomcat-7.0.70/webapps/data/sample.xls"));
+            FileOutputStream out = new FileOutputStream(new File(Provider.getUpload_path() + filename + ".xls"));
             workbook.write(out);
             out.close();
         } catch (Exception ex) {
@@ -400,12 +407,12 @@ public class CSVUtils {
          
         List<String> allCols = Mapping.minify(Mapping.getMap());
         
-        formula  = new ConnectionProvider().translate_formula(formula, allCols).replace("#", "1");
-        System.out.println(formula);
+        formula  = new CSVUtils().translate_formula(formula, allCols).replace("#", "1");
+        
         
         String v_msg = "valid";
         try {
-            FileInputStream file = new FileInputStream(new File("/media/islam/55247aa2-2234-4e48-8a62-c1fabcb5c84d/opt/apache-tomcat-7.0.70/webapps/data/validation.xls"));
+            FileInputStream file = new FileInputStream(new File(Provider.getUpload_path() + "validation.xls"));
 
             HSSFWorkbook workbook = new HSSFWorkbook(file);
             HSSFSheet sheet = workbook.getSheetAt(0);
@@ -429,6 +436,72 @@ public class CSVUtils {
             v_msg = e.getMessage();
         }
         return v_msg;
+    }
+    
+    /**
+     * convert columns names to A..Z
+     *
+     * @param String formula
+     * @param List table_cols
+     * @return
+     */
+    public String translate_formula(String formula, List<String> table_cols) {
+        /*
+        Map<Integer, String> sortedCols = Mapping.sortCols(table_cols);
+
+        formula = handle_cols(formula);
+        System.out.println(formula);
+        int table_col_index = 0;
+        for (int c : sortedCols.keySet()) {
+            String col = sortedCols.get(c);
+            if (formula.contains(col)) {
+                int index = table_cols.indexOf(col);
+                String ch = Mapping.getChar(table_col_index);
+                
+                formula = formula.replace(col, ch);
+            }
+            table_col_index++;
+        }
+         */
+        System.out.println(java.util.Arrays.toString(table_cols.toArray()));
+
+        formula = handle_cols(formula);
+        System.out.println(formula);
+
+        for (int i = 0; i < table_cols.size(); i++) {
+            if (formula.contains("{" + table_cols.get(i) + "}")) {
+                System.out.println(table_cols.get(i));
+                formula = formula.replace("{" + table_cols.get(i) + "}", Mapping.getCharAt(i));
+            }
+        }
+
+        System.out.println(formula);
+        return formula;
+    }
+    
+    /**
+     * remove { }
+     *
+     * @param formula
+     * @return
+     */
+    private String handle_cols(String formula) {
+
+        int i = 0;
+        while (i < formula.length()) {
+            int index1 = formula.indexOf("{", i);
+            int index2 = formula.indexOf("}", i);
+            if (index1 == -1 || index2 == -1) {
+                break;
+            }
+            String col = formula.substring(index1 + 1, index2);
+            i = index2 + 1;
+            String col2 = strip_special_chars(col);
+            formula = formula.replaceFirst(col, col2);
+        }
+
+        //return formula.replaceAll("[{}]", "");
+        return formula;
     }
     
 

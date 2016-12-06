@@ -56,36 +56,40 @@
 </style>
 <h3>Apply Formula</h3>
 <%
-    int table_id = Integer.parseInt(request.getParameter("table"));
+    int file_id = Integer.parseInt(request.getParameter("table"));
 
     if (request.getParameter("apply") != null) {
         
         String title = request.getParameter("title");
         int formula_id = Integer.parseInt(request.getParameter("formula_id"));
         
+        boolean applied = db.apply_formula(formula_id, file_id, title);
         
-    }
-
-    List<Formula> formulaes = db.getFormulaes();
-
-%>
-
-
+        if(applied){
+    %>
 <div class="alert alert-success">
-    <strong>Success!</strong> KPI Added successfully.
+    <strong>Success!</strong> Formula applied successfully.
 </div>    
-
+<%} else {%>
 <div class="alert alert-danger">
     <strong>Oops!</strong> something wrong happened, please try again!.
 </div>
+<%    }
+    }
+    
+    Files file = db.getFile(file_id);
+    List<Formula> formulaes = db.get_unapplied_Formulaes(file_id);
+
+%>
+
 
 
 <div>
 
     <form method="post" action="" >
-        <input onClick="$('input[name=title]').toggle()" type='checkbox' name="new_table" value="1" /> New Table
+        <input id="newtable" type='checkbox' name="new_table" value="1" /> New Table
         <br />
-        <input style="display: none" type="text" name="title" class="form-control" />
+        <input style="display: none" type="text" name="title" value="<%=file.getTitle()%>" placeholder="Title" class="form-control" />
 
         <select name="formula_id" class="form-control">
             <option value="0">Select Formula</option>
@@ -101,7 +105,21 @@
 
 <script type="text/javascript">
 
-
+    $("#newtable").click(function(){
+            
+            var title_input = $('input[name=title]')
+            
+            var title = title_input.val();
+            
+            if($(this).is(':checked')){
+               title_input.val('');
+            }else{
+               title_input.val("<%=file.getTitle()%>");
+            }
+            
+            title_input.toggle();
+    
+    });
 
     $('select').select2({
         tags: true,

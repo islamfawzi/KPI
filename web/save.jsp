@@ -15,7 +15,7 @@
    //tableName = tableName.trim().toLowerCase().replace(' ', '_');
    db.createTable(tableName, cols);
    db.insertData(tableName, csvData);
-   db.addFile(filepath, tableName);
+   db.addFile(filepath, tableName, 0);
    
 %>
 <jsp:forward page="kpis.jsp"></jsp:forward>

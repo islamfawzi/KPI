@@ -3,6 +3,7 @@
     Created on : Nov 14, 2016, 3:58:28 PM
     Author     : islam
 --%>
+<%@page import="org.isource.beans.Formula"%>
 <%@page import="org.isource.util.CSVUtils"%>
 <%@page import="org.isource.beans.Mapping"%>
 <%@page import="org.json.simple.JSONObject"%>
@@ -30,8 +31,8 @@
     
     else if(request.getParameter("tableid") != null){
         int table_id = Integer.parseInt(request.getParameter("tableid"));
-        KPI_Formula_Table kpi = db.getKpi(table_id); 
-        String kpi_json = db.calc2(kpi.getX_axis(), kpi.getFormula(), kpi.getTableName());
+        KPI_Formula_Table kpi = db.getKpi(table_id);
+        String kpi_json = db.calc2(kpi.getX_axis(), kpi.getFormula_id(), kpi.getTableName());
         out.print(kpi_json);
     }
     

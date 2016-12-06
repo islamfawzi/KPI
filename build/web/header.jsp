@@ -36,41 +36,46 @@
     </head>
 
     <jsp:useBean id="db" class="org.isource.util.ConnectionProvider" scope="application" ></jsp:useBean>
-
+    <jsp:useBean id="provider" class="org.isource.providers.Provider" scope="application" ></jsp:useBean>
+    <%
+        if(provider.getUpload_path() == null){
+            provider.setUpload_path(getServletContext().getRealPath(provider.getUpload_folder()) + "/");
+        }
+      
+    %>
         <body>
-
+            <style>
+                
+                .glyphicon{
+                    display: inline;
+                }
+            </style>
             <div id="wrapper">
 
                 <!-- Sidebar -->
                 <div id="sidebar-wrapper">
                     <ul class="sidebar-nav">
                         <li class="sidebar-brand">
-                            <a href="${pageContext.request.contextPath}">KPIs</a>
+                            <a href="${pageContext.request.contextPath}">
+                                <span class="glyphicon glyphicon-signal" aria-hidden="true"></span>
+                                KPIs</a>
                     </li>
                     <li>
-                        <a href="${pageContext.request.contextPath}/import.jsp">Import Sheet</a>
-                    </li>
-                    <%--
-                    <li>
-                        <a href="${pageContext.request.contextPath}/formula.jsp">Add Formula</a>
-                    </li> 
-                    --%>
-                    <li>
-                        <a href="${pageContext.request.contextPath}/formulas.jsp">Formulas</a>
+                        <a href="${pageContext.request.contextPath}/import.jsp">
+                            <span class="glyphicon glyphicon-cloud-upload" aria-hidden="true"></span>
+                            Import Sheet</a>
                     </li>
                     <li>
-                        <a href="${pageContext.request.contextPath}/tables.jsp">Tables</a>
+                        <a href="${pageContext.request.contextPath}/formulas.jsp">
+                            <span class="glyphicon glyphicon-baby-formula" aria-hidden="true"></span>
+                            Formulas</a>
                     </li>
-                    <%--
                     <li>
-                        <a href="${pageContext.request.contextPath}/add-kpi.jsp">Add KPI</a>
+                        <a href="${pageContext.request.contextPath}/tables.jsp">
+                            <span class="glyphicon glyphicon-th-list" aria-hidden="true"></span>
+                            Sheets</a>
                     </li>
-                    --%>
-                    <%-- 
-                    <li>
-                        <a href="${pageContext.request.contextPath}/map.jsp">Add Mapping</a>
-                    </li> 
-                    --%>
+                    
                 </ul>
             </div>
             <!-- /#sidebar-wrapper -->

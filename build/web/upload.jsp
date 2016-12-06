@@ -7,12 +7,17 @@
 <%@ page import="org.apache.commons.io.output.*" %>
 <%@ page import="org.isource.util.CSVUtils" %>
 
+<%@include  file="header.jsp" %>
+
 <%
     File file;
     int maxFileSize = 5000 * 1024;
     int maxMemSize = 5000 * 1024;
     ServletContext context = pageContext.getServletContext();
-    String filePath = context.getInitParameter("file-upload");
+//  String filePath = context.getInitParameter("file-upload");
+    
+    String filePath = provider.getUpload_path();
+    
     System.out.println(filePath);
 
     // Verify the content type
@@ -59,7 +64,7 @@
 
                     //CSVUtils.updateSheet(filePath + fileName);
                     csvData = CSVUtils.readCsv(filePath + fileName);
-                    session.setAttribute("filepath", filePath + fileName);
+                    session.setAttribute("filepath", fileName);
                     session.setAttribute("tableName", fileName.substring(0, fileName.indexOf('.')));
                     session.setAttribute("csvData", csvData);
 
@@ -68,7 +73,7 @@
 %>
 
 
-<%@include  file="header.jsp" %>
+
 <style>
     .select2-selection__arrow{
         display: none;
@@ -90,7 +95,7 @@
                 </tr>
             </thead>
             <tbody>
-                <%  List columns = csvData.get(0);
+                <%  List<String> columns = csvData.get(0);
                     for (int c = 0; c < columns.size(); c++) {
                 %>
                 <tr>
@@ -99,7 +104,7 @@
                     <td>
                         <select name="col_<%=c%>" class="form-control" >
                             <% for (int index = 0; index < Mapping.getMap().size(); index++) { %>
-                            <option <%if (columns.get(c).equals(Mapping.getMap().get(index))) {%> selected="selected" <%}%> value="<%=Mapping.getMap().get(index)%>"><%= Mapping.getMap().get(index)%></option>
+                            <option <%if (db.strip_special_chars(columns.get(c)).equals(db.strip_special_chars(Mapping.getMap().get(index)))) {%> selected="selected" <%}%> value="<%=Mapping.getMap().get(index)%>"><%= Mapping.getMap().get(index)%></option>
                             <% } %>
 
                         </select>

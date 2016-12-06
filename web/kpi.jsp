@@ -33,7 +33,7 @@
     String kpi_json = "";
     
     KPI_Formula_Table kpi = db.getKpi(kId);
-    kpi_json = db.calc2(kpi.getX_axis(), kpi.getFormula(), kpi.getTableName());
+    kpi_json = db.calc2(kpi.getX_axis(), kpi.getFormula_id(), kpi.getTableName());
     
 %>
 

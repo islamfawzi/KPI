@@ -10,10 +10,43 @@
     </welcome-file-list>
     
     <context-param> 
-    <description>Location to store uploaded file</description> 
-    <param-name>file-upload</param-name> 
-    <param-value>
-         /media/islam/55247aa2-2234-4e48-8a62-c1fabcb5c84d/opt/apache-tomcat-7.0.70/webapps/data/
-    </param-value> 
-  </context-param>
+        <description>Location to store uploaded file</description> 
+        <param-name>file-upload</param-name> 
+        <param-value>
+            /media/islam/55247aa2-2234-4e48-8a62-c1fabcb5c84d/opt/apache-tomcat-7.0.70/webapps/data/
+        </param-value> 
+    </context-param>
+  
+    <servlet-mapping>
+        <servlet-name>default</servlet-name>
+        <url-pattern>*.js</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>default</servlet-name>
+        <url-pattern>*.json</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>default</servlet-name>
+        <url-pattern>*.css</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>default</servlet-name>
+        <url-pattern>*.jpg</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>default</servlet-name>
+        <url-pattern>*.png</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>default</servlet-name>
+        <url-pattern>*.gif</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>default</servlet-name>
+        <url-pattern>*.xls</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>default</servlet-name>
+        <url-pattern>*.csv</url-pattern>
+    </servlet-mapping>
 </web-app>

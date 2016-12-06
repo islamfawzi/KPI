@@ -6,11 +6,13 @@
 package org.isource.util;
 
 import antlr.StringUtils;
+import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -20,6 +22,7 @@ import java.util.logging.Logger;
 import org.apache.poi.ss.formula.FormulaParseException;
 import org.apache.poi.ss.formula.FormulaParser;
 import org.isource.beans.*;
+import org.isource.providers.Provider;
 import org.json.simple.JSONObject;
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
@@ -54,31 +57,46 @@ public class ConnectionProvider {
 
     }
 
-    public void createTable(String tableName, List<String> cols) {
+    public int createTable(String tableName, List<String> cols) {
 
         tableName = tableName.trim().toLowerCase().replace(' ', '_');
-
+        
+        // if user upload sheet with un-ordered columns
+        Map<Integer, String> sorted_cols = Mapping.sortList(cols);
+        System.out.println(sorted_cols);
+        
         try {
             //Drop table if exist
             pstmt = connection.prepareStatement("DROP TABLE IF EXISTS " + tableName);
             pstmt.executeUpdate();
 
+            String col = "";
             // create table
             String stmt = "CREATE TABLE IF NOT EXISTS public." + tableName + " ( id numeric NOT NULL, ";
-            for (int i = 0; i < cols.size(); i++) {
-                stmt += cols.get(i).trim().toLowerCase().replaceAll("\\W", "") + " character varying(255), ";
+            for (int i : sorted_cols.keySet()) {
+                col = sorted_cols.get(i);
+                stmt += strip_special_chars(col) + " character varying(255), ";
+
+                if (!Mapping.inMap(col)) {
+                    Mapping.addToMap(col);
+                }
             }
 
 //          stmt += stmt.substring(0, stmt.length() - 2) + " )";
             stmt += " CONSTRAINT " + tableName + "_PK PRIMARY KEY (id))";
             pstmt = connection.prepareStatement(stmt);
             pstmt.executeUpdate();
+            
+            return 1;
+        
         } catch (Exception ex) {
             ex.printStackTrace();
+            return 0;
         }
+        
     }
 
-    public void insertData(String tableName, List<List> csvData) {
+    public int insertData(String tableName, List<List> csvData) {
 
         tableName = tableName.trim().toLowerCase().replace(' ', '_');
 
@@ -99,39 +117,51 @@ public class ConnectionProvider {
                 id++;
                 pstmt.executeUpdate();
             }
+            return 1;
         } catch (Exception ex) {
             ex.printStackTrace();
+            return 0;
         }
-
     }
 
-    public void addFile(String filepath, String tablename) {
+    public int addFile(String filepath, String tablename, int formula_id) {
 
         String title = tablename.substring(0, 1).toUpperCase() + tablename.substring(1);;
         tablename = tablename.trim().toLowerCase().replace(' ', '_');
+        int table_id = tableExist(tablename);
+
         try {
 
-            int table_id = tableExist(tablename);
             if (table_id != 0) {
-                pstmt = connection.prepareStatement("UPDATE public.files SET updated = now()"
+                pstmt = connection.prepareStatement("UPDATE public.files SET updated = now(), formula_id = ?"
                         + " WHERE id = ? ");
-                pstmt.setInt(1, table_id);
+                pstmt.setInt(1, formula_id);
+                pstmt.setInt(2, table_id);
             } else {
                 //pstmt = connection.prepareStatement("INSERT INTO public.files (id, filepath, tablename, created, updated) VALUES (1, ?, ?, now(), now())");
-                pstmt = connection.prepareStatement("INSERT INTO public.files (filepath, tablename, title)"
-                        + " VALUES (?, ?, ?)");
+                pstmt = connection.prepareStatement("INSERT INTO public.files (filepath, tablename, title, formula_id)"
+                        + " VALUES (?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
 
                 pstmt.setString(1, filepath);
                 pstmt.setString(2, tablename);
                 pstmt.setString(3, title);
+                pstmt.setInt(4, formula_id);
+
             }
-            pstmt.executeUpdate();
+            int success = pstmt.executeUpdate();
+
+            // get last inserted id
+            ResultSet rs = pstmt.getGeneratedKeys();
+            if (rs.next()) {
+                table_id = rs.getInt(1);
+            }
 
         } catch (Exception ex) {
             ex.printStackTrace();
         }
+
+        return table_id;
     }
-    
 
     public int tableExist(String tablename) {
 
@@ -157,7 +187,11 @@ public class ConnectionProvider {
     public List<Files> getFiles() {
         List<Files> files = new ArrayList<Files>();
         try {
-            pstmt = connection.prepareStatement("SELECT files.id, files.tablename, files.title, formula.title as formula_title FROM public.files "
+            String sql = "select fs.id, fs.tablename, fs.title, fs.filepath, fm.title as formula_title "
+                       + "from files fs, formula fm, files_formulas ff " 
+                       + "where fs.id = ff.file_id and fm.id = ff.formula_id";
+            
+            pstmt = connection.prepareStatement("SELECT files.id, files.tablename, files.title, files.filepath, formula.title as formula_title FROM public.files "
                     + " FULL JOIN public.formula ON files.formula_id = formula.id"
                     + " WHERE files.active = TRUE ORDER BY created ASC");
             ResultSet rs = pstmt.executeQuery();
@@ -166,7 +200,8 @@ public class ConnectionProvider {
                 f.setId(rs.getInt(1));
                 f.setTablename(rs.getString(2));
                 f.setTitle(rs.getString(3));
-                f.setFormula_title(rs.getString(4));
+                f.setFilepath(rs.getString(4));
+                f.setFormula_title(rs.getString(5));
                 files.add(f);
             }
         } catch (Exception ex) {
@@ -174,9 +209,75 @@ public class ConnectionProvider {
         }
         return files;
     }
-    
-    public void delFile(int file_id){
-    
+
+    public Files getFile(int file_id) {
+        Files f = new Files();
+        try {
+            pstmt = connection.prepareStatement("SELECT files.id, files.tablename, files.title, files.filepath, formula.title as formula_title FROM public.files "
+                    + " FULL JOIN public.formula ON files.formula_id = formula.id"
+                    + " WHERE files.id = ? LIMIT 1");
+            
+            /*pstmt = connection.prepareStatement("select fs.id, fs.tablename, fs.title, fs.filepath, fm.title as formula_title "
+                    + "from files fs, formula fm, files_formulas ff " +
+                "where fs.id = ? and fs.id = ff.file_id and fm.id = ff.formula_id");*/
+            
+            pstmt.setInt(1, file_id);
+            
+            ResultSet rs = pstmt.executeQuery();
+            rs.next();
+
+            f.setId(rs.getInt(1));
+            f.setTablename(rs.getString(2));
+            f.setTitle(rs.getString(3));
+            f.setFilepath(rs.getString(4));
+            f.setFormula_title(rs.getString(5));
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return f;
+    }
+
+    /**
+     * delete sheet file + drop table + from files + from files_formulas
+     *
+     * @param file_id
+     * @return boolean deleted
+     */
+    public boolean delFile(int file_id) {
+
+        boolean deleted = true;
+        try {
+
+            Files file = getFile(file_id);
+
+            pstmt = connection.prepareStatement("DELETE FROM public.files WHERE id = ?");
+            pstmt.setInt(1, file_id);
+            if(pstmt.executeUpdate() < 1){
+             deleted = false;
+             System.out.println("files not deleted");
+            }
+
+            pstmt = connection.prepareStatement("DELETE FROM public.files_formulas WHERE file_id = ?");
+            pstmt.setInt(1, file_id);
+            
+            pstmt = connection.prepareStatement("DROP TABLE IF EXISTS " + file.getTablename());
+            int dropped = pstmt.executeUpdate();
+            System.out.println("Table Dropped: " + dropped);
+
+            String file_path = Provider.getUpload_path() + file.getFilepath();
+            System.out.println("file path " + file_path);
+            if (!new File(file_path).delete()) {
+                deleted = false;
+                System.out.println("files not deleted");
+            }
+
+
+        } catch (Exception ex) {
+            deleted = false;
+        }
+
+        return deleted;
     }
 
     public List<String> getTableCols(String tableName) {
@@ -257,6 +358,60 @@ public class ConnectionProvider {
             ex.printStackTrace();
         }
         return null;
+    }
+
+    /**
+     * get un applied formulas on file
+     */
+    public List<Formula> get_unapplied_Formulaes(int file_id) {
+        List<Formula> formulas = new ArrayList<Formula>();
+        try {
+            pstmt = connection.prepareStatement("SELECT * "
+                    + "FROM public.formula  "
+                    + "WHERE id NOT IN "
+                    + "    (SELECT formula_id "
+                    + "     FROM public.files_formulas WHERE file_id = ?)");
+            pstmt.setInt(1, file_id);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                Formula f = new Formula();
+                f.setId(rs.getInt(1));
+                f.setFormula(rs.getString(2));
+                f.setActive(rs.getBoolean(3));
+                f.setTitle(rs.getString(4));
+                formulas.add(f);
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return formulas;
+    }
+
+    /**
+     * get applied formulas on file
+     */
+    public List<Formula> get_applied_Formulaes(int file_id) {
+        List<Formula> formulas = new ArrayList<Formula>();
+        try {
+            pstmt = connection.prepareStatement("SELECT * "
+                    + "FROM public.formula  "
+                    + "WHERE id IN "
+                    + "    (SELECT formula_id "
+                    + "     FROM public.files_formulas WHERE file_id = ?)");
+            pstmt.setInt(1, file_id);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                Formula f = new Formula();
+                f.setId(rs.getInt(1));
+                f.setFormula(rs.getString(2));
+                f.setActive(rs.getBoolean(3));
+                f.setTitle(rs.getString(4));
+                formulas.add(f);
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return formulas;
     }
 
     public int delFormula(int kpi_id) {
@@ -363,45 +518,25 @@ public class ConnectionProvider {
         return 0;
     }
 
-    @Deprecated
-    public String calc(String x_axis, String formula, String tablename) {
-
-        formula = handle_cols(formula);             // toLowerCase & replace spaces with _
-        formula = formula.replace("{", " cast( ");
-        formula = formula.replace("}", " as numeric) ");
-
-        JSONObject obj = new JSONObject();
-
-        try {
-            pstmt = connection.prepareStatement("SELECT " + x_axis + "," + formula + " as result FROM " + tablename);
-            ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
-                String key = rs.getString(x_axis);
-                if (obj.containsKey(key)) {
-                    double value = (Double) obj.get(key) + rs.getDouble("result");
-                    obj.put(key, value);
-                } else {
-                    obj.put(key, rs.getDouble("result"));
-                }
-
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-
-        System.out.println(obj.toJSONString());
-        return obj.toJSONString();
-    }
-
-    public String calc2(String x_axis, String formula, String tablename) throws FormulaParseException {
+    
+    /**
+     * calculate KPI from (formula , sheet) by apply it into temp sheet
+     *
+     * @param x_axis
+     * @param formula
+     * @param tablename
+     * @return
+     * @throws FormulaParseException
+     */
+    public String calc2(String x_axis, int formula_id, String tablename) throws FormulaParseException {
 
         List<String> x_axis_data = new ArrayList<String>();
         List<List> lines = new ArrayList<List>();
-
+        tablename = strip_special_chars(tablename);
+        Formula formula_obj = getFormula(formula_id);
+        
         try {
             List<String> table_cols = getTableCols(tablename);
-
-            formula = translate_formula(formula, table_cols);
 
 //          System.out.println(formula);
             pstmt = connection.prepareStatement("select *, " + x_axis + " as x_axis from " + tablename);
@@ -421,8 +556,8 @@ public class ConnectionProvider {
 
             // get formula result
             CSVUtils utils = new CSVUtils();
-            List<String> kpiout = utils.createSheet(table_cols, lines, formula);
-
+            List<String> kpiout = utils.createSheet(table_cols, lines, formula_obj, tablename);
+            System.out.println(Arrays.toString(kpiout.toArray()));
             // get Json String
             return getJsonData(x_axis_data, kpiout, x_axis);
 
@@ -433,6 +568,113 @@ public class ConnectionProvider {
         return null;
     }
 
+    /**
+     * apply formula to sheet (table)
+     *
+     * @param formula_id
+     * @param file_id
+     * @param title
+     * @throws FormulaParseException
+     */
+    public boolean apply_formula(int formula_id, int file_id, String title) throws FormulaParseException {
+
+        Files file = getFile(file_id);
+
+        Formula formula_obj = getFormula(formula_id);
+       
+        List<List> lines = new ArrayList<List>();
+
+        try {
+            List<String> table_cols = getTableCols(file.getTablename());
+
+            
+            pstmt = connection.prepareStatement("select * from " + file.getTablename());
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+
+                List<String> line = new ArrayList<String>();
+                for (String col : table_cols) {
+                    line.add(rs.getString(col));
+                }
+                lines.add(line);
+            }
+            
+            title = strip_special_chars(title);
+
+            // get formula result
+            CSVUtils utils = new CSVUtils();
+            List<String> kpiout = utils.createSheet(table_cols, lines, formula_obj, title);
+            kpiout.remove(0);
+
+            // add formula result to each row
+            for (int i = 0; i < lines.size(); i++) {
+                lines.get(i).add(kpiout.get(i));
+            }
+
+            // create new table with old columns + formula column
+            table_cols.add(formula_obj.getTitle());
+            int created = createTable(title, table_cols);
+            System.out.println("created: "+created);
+            
+            // insert old data + formula result 
+            lines.add(0, table_cols);
+            int inserted = insertData(title, lines);
+            System.out.println("inserted: "+inserted);
+            
+            // add file into files table
+            int new_file_id = addFile( title + ".xls", title, formula_id);
+
+            List<Formula> applied_formulas = get_applied_Formulaes(file_id);
+
+            int added = add_file_formula(formula_id, new_file_id);
+
+            
+            // add old applied formulas to new file to not apply it again
+            for (Formula f : applied_formulas) {
+                added += add_file_formula(f.getId(), new_file_id);
+            }
+            System.out.println("added: "+added+":"+applied_formulas.size()+1);
+            
+            // return 
+            if(created == 1 && inserted == 1 && added == applied_formulas.size()+1){
+                return true;
+            }
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        
+        return false;
+    }
+
+    /*
+     * insert into files_formulas table 
+     * to not apply formula on table more than once
+     */
+    public int add_file_formula(int formula_id, int file_id) {
+
+        try {
+            // insert into files_formulas
+            pstmt = connection.prepareStatement("INSERT INTO files_formulas (file_id, formula_id) VALUES (?, ?)");
+            pstmt.setInt(1, file_id);
+            pstmt.setInt(2, formula_id);
+            return pstmt.executeUpdate();
+        } catch (SQLException ex) {
+            Logger.getLogger(ConnectionProvider.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return 0;
+    }
+
+    /**
+     * Convert List to Json String
+     *
+     * @param x_axis_data
+     * @param kpiData
+     * @param x_axis
+     * @return
+     */
     public String getJsonData(List<String> x_axis_data, List<String> kpiData, String x_axis) {
 
         JSONObject obj = new JSONObject();
@@ -449,58 +691,23 @@ public class ConnectionProvider {
         return obj.toJSONString();
     }
 
-    private String handle_cols(String formula) {
-
-        int i = 0;
-        while (i < formula.length()) {
-            int index1 = formula.indexOf("{", i);
-            int index2 = formula.indexOf("}", i);
-            if (index1 == -1 || index2 == -1) {
-                break;
-            }
-            String col = formula.substring(index1 + 1, index2);
-            i = index2 + 1;
-            String col2 = col.trim().toLowerCase().replaceAll("\\W", "");
-            formula = formula.replaceFirst(col, col2);
-        }
-
-        return formula.replaceAll("[{}]", "");
-    }
-
     /**
-     * convert columns names to A..Z
-     * @param String formula
-     * @param List table_cols
-     * @return 
+     * remove any special chars, spaces and convert into lowerCase
+     *
+     * @param x
+     * @return
      */
-    public String translate_formula(String formula, List<String> table_cols) {
-        
-        Map<Integer, String> sortedCols = Mapping.sortCols(table_cols);
+    public static String strip_special_chars(String x) {
 
-        formula = handle_cols(formula);
-        
-        int table_col_index = 0;
-        for (int c : sortedCols.keySet()) {
-            String col = sortedCols.get(c);
-            if (formula.contains(col)) {
-                int index = table_cols.indexOf(col);
-                String ch = Mapping.getChar(table_col_index);
-                System.out.println(ch);
-                formula = formula.replace(col, ch);
-            }
-            table_col_index++;
-
-        }
-
-        return formula;
+        x = x.trim().toLowerCase().replaceAll("\\W", "");
+        return x;
     }
 
     public static void main(String[] args) {
 
-        // String x = new ConnectionProvider().calc2("day", "SUM({Rest Break}#,{No. of Defects}#)", "quality");
-        
-         String x = new CSVUtils().validate_formula("SUM({Rest Break}#,{No. of Defects}#");
-         System.out.println(x);
+     //  String x = new ConnectionProvider().calc2("day", "SUM({Rest Break}#,{Quality}#)", "newtable");
+     //  String x = new CSVUtils().validate_formula("SUM({Rest Break}#,{No. of Defects}#");
+
     }
 
 }
