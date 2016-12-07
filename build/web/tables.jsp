@@ -13,9 +13,6 @@
     .kpi-cb{
         width: 20px;
     }
-    .apply-formula-div{
-        display: none;
-    }
 </style>
 <h1>Sheets <a href="import.jsp" class="btn btn-primary">
         <span class="glyphicon glyphicon-cloud-upload" aria-hidden="true"></span>
@@ -35,13 +32,17 @@
 %>
 
 <% if (deleted == files_ids.length) {%>
+
 <div class="alert alert-success">
     <strong>Success!</strong> Tables deleted successfully.
 </div> 
+
 <% } else { %>
+
 <div class="alert alert-danger">
     <strong>Oops!</strong> something wrong happened, please try again!.
 </div>
+
 <% }
     } %>
 
@@ -98,12 +99,4 @@
     </tbody>
 </table>
 </form>
-<script type="text/javascript">
-
-    $("#checkall").click(function () {
-        var checkall = $(this).is(":checked");
-        $("input[type=checkbox]").prop("checked", checkall);
-    });
-
-</script>
 <%@ include file="footer.jsp" %>

@@ -11,20 +11,6 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@include file="header.jsp" %>
 
-<style>
-    .imgs-div{
-        text-align: center; 
-        margin-bottom: 40px;
-    }
-    .charts-imgs{
-        width: 100px;
-        padding: 10px;
-    }
-    .border{
-        border: 3px solid #000;
-    }
-    
-</style>
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
 

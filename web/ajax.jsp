@@ -12,9 +12,16 @@
 <%@ page import="java.io.*,java.util.*, javax.servlet.*" %>
 <jsp:useBean id="db" class="org.isource.util.ConnectionProvider" scope="application" ></jsp:useBean>
 
-<%
-    if (request.getParameter("tablename") != null) {
-        String tablename = request.getParameter("tablename");
+<%     
+    // parse angular request payload
+    JSONParser parser = new JSONParser();
+    JSONObject jsonObject = (JSONObject) parser.parse(request.getReader());
+
+    
+    if (jsonObject.get("tablename") != null  || request.getParameter("tablename") != null) {
+  
+        String tablename = (jsonObject.get("tablename") != null) ? jsonObject.get("tablename").toString() : request.getParameter("tablename");
+        
         List<String> cols = db.getTableCols(tablename);
         
         JSONObject obj = new JSONObject();

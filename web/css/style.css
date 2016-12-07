@@ -1,0 +1,59 @@
+form div {
+    width: 600px; 
+    margin:15px 0 15px 0 !important;
+
+}
+
+.select2-selection__arrow{
+    display: none;
+}
+
+.select2-selection{
+    height: 36px !important;
+    padding-top: 3px;
+}
+
+textarea.form-control{
+    margin-bottom: 10px;
+}
+
+.no-padding{
+    padding: 0px;
+}
+
+.red-alert{
+    border: 1px solid #930202 !important;
+}
+
+.error{
+    color: #930202;
+}
+
+.select2-container {
+    margin: 0;
+}
+
+.kpis{
+    width: 26%;
+}
+
+.kpi-cb{
+    width: 1%;
+}
+
+.glyphicon{
+    display: inline;
+}
+
+/* Kpi */
+.imgs-div{
+    text-align: center; 
+    margin-bottom: 40px;
+}
+.charts-imgs{
+    width: 100px;
+    padding: 10px;
+}
+.border{
+    border: 3px solid #000;
+}

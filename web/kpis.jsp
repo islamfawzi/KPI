@@ -3,14 +3,7 @@
 <%@page import="org.isource.beans.KPI_Formula_Table"%>
 <%@ include file="header.jsp"  %>
 
-<style type="text/css">
-    .kpis{
-        width: 450px;
-    }
-    .kpi-cb{
-        width: 20px;
-    }
-</style>
+
 <h1>KPIs <a href="add-kpi.jsp" class="btn btn-primary">
         <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
         Add Kpi </a></h1> 
@@ -79,12 +72,5 @@
     </tbody>
 </table>
 </form>
-<script>
 
-    $("#checkall").click(function () {
-        var checkall = $(this).is(":checked");
-        $("input[type=checkbox]").prop("checked", checkall);
-    });
-
-</script>
 <%@ include file="footer.jsp" %>

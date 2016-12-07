@@ -2,14 +2,7 @@
 <%@page import="java.util.List"%>
 <%@ include file="header.jsp"  %>
 
-<style type="text/css">
-    .kpis{
-        width: 26%;
-    }
-    .kpi-cb{
-        width: 1%;
-    }
-</style>
+
 <h1>Formulas <a href="formula.jsp" class="btn btn-primary"> 
         <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
         Add Formula </a></h1> 

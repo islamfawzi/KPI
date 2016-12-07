@@ -8,15 +8,9 @@
 <!-- /#wrapper -->
 
 
-<!-- Menu Toggle Script -->
-<script>
-    
-    $("#menu-toggle").click(function (e) {
-        e.preventDefault();
-        $("#wrapper").toggleClass("toggled");
-    });
-
-</script>
+<script src="js/menu.js"></script>
+<script src="js/select2.js"></script>
+<script src="js/global.js"></script>
 
 </body>
 
