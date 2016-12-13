@@ -13,7 +13,8 @@
 <script src="js/kpi.js"></script>
 
 <h3>Add KPI</h3>
-<%    List<Formula> formulaes = db.getFormulaes();
+<%  
+    List<Formula> formulaes = db.getFormulaes();
     List<Files> files = db.getFiles();
 %>
 

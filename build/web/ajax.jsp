@@ -16,7 +16,6 @@
     // parse angular request payload
     JSONParser parser = new JSONParser();
     JSONObject jsonObject = (JSONObject) parser.parse(request.getReader());
-
     
     if (jsonObject.get("tablename") != null  || request.getParameter("tablename") != null) {
   
@@ -29,14 +28,11 @@
             obj.put(c, Mapping.getFullLabel(c));
         }
         
-        
-        /*for(int i = 0; i < cols.size();i++){
-            output += "   <input class='cols-btn' type='radio' name='x_axis' value='" + cols.get(i) + "' />" + Mapping.getFullLabel(cols.get(i));
-        }*/
         out.print(obj.toJSONString());
     }
     
     else if(request.getParameter("tableid") != null){
+        
         int table_id = Integer.parseInt(request.getParameter("tableid"));
         KPI_Formula_Table kpi = db.getKpi(table_id);
         String kpi_json = db.calc2(kpi.getX_axis(), kpi.getFormula_id(), kpi.getTableName());

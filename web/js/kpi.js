@@ -40,8 +40,9 @@ app.controller("kpiCtrl", ["$scope", "$http", "Kpi", function ($scope, $http, Kp
         };
 
         var table_name = $('option:selected', "select[name=table_id]").attr('tablename') || "";
-       
-        $scope.x_axis = $scope.getSheetXaxis(table_name);
+         
+        $scope.x_axis = (table_name) ? $scope.getSheetXaxis(table_name) : {};
+
 
         $scope.onChangeSheet = function () {
 
@@ -64,9 +65,11 @@ app.filter('isEmpty', function () {
     return function (obj) {
         for (bar in obj) {
             if (obj.hasOwnProperty(bar)) {
+                console.log("not empty " + bar);
                 return false;
             }
         }
+        console.log("empty");
         return true;
     };
 });
